@@ -46,9 +46,9 @@ import org.opensaml.xml.schema.XSString;
 import uk.ac.diamond.shibbolethecpauthclient.ShibbolethECPAuthClient;
 
 /**
- * Shibboleth authentication handler. Tries a list of IdPs to authenticate against
- * It consumes the returned SAML assertion on successful authentication, then updates 
- * the Credentials with the updated information
+ * Shibboleth authentication handler. Tries to authenticate against an IdP
+ * If requested, it consumes the returned SAML assertion on successful 
+ * authentication, then updates the principal with the updated information
  * 
  * @author Stefan Paetow
  * @version $Revision$ $Date$
@@ -97,13 +97,18 @@ public class ShibbolethAuthenticationHandler extends AbstractUsernamePasswordAut
             final BasicParserPool parserPool = new BasicParserPool();
             parserPool.setNamespaceAware(true);
 
-            // reset proxy port to the default 8080
-            if ((!this.proxyHost.isEmpty()) && (this.proxyPort == 0)) {
-            	this.proxyPort = 8080;
+            // Set proxy
+            HttpHost proxy = null;
+            if (!this.proxyHost.isEmpty()) {
+                if (this.proxyPort == 0) {
+                    proxy = new HttpHost(this.proxyHost, 8080);
+                } else {
+                	proxy = new HttpHost(this.proxyHost, this.proxyPort);
+                }
             }
-
+            
             // Instantiate a copy of the client, try to authentication, catch any errors that occur
-            ShibbolethECPAuthClient ecpClient = new ShibbolethECPAuthClient(new HttpHost(this.proxyHost, this.proxyPort), this.IdP, 
+            ShibbolethECPAuthClient ecpClient = new ShibbolethECPAuthClient(proxy, this.IdP, 
             		this.SP, false);
 
             // if the attribute is empty, we simply authenticate and return the username as principal
@@ -191,5 +196,23 @@ public class ShibbolethAuthenticationHandler extends AbstractUsernamePasswordAut
      */
     public void setSP(final String SP) {
         this.SP = SP;
+    }
+
+    /**
+     * Identifies an optional proxy host to connect to the IdP and the SP with.
+     * 
+     * @param proxyHost string specifying the proxy host to connect with.
+     */
+    public void setProxyHost(final String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    /**
+     * Identifies an optional proxy port to use with the proxy host.
+     * 
+     * @param proxyPort integer specifying the proxy port to connect with. 
+     */
+    public void setProxyPort(final int proxyPort) {
+        this.proxyPort = proxyPort;
     }
 }
